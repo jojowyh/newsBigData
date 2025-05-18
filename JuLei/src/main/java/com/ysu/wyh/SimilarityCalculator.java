@@ -7,14 +7,20 @@ import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
+import static com.ysu.wyh.Vectorizer.normalize;
+
 public  class SimilarityCalculator {
     // 计算两个向量的余弦相似度[6,7](@ref)
     public static double cosineSimilarity(Map<String, Double> vec1, Map<String, Double> vec2) {
+        // 新增归一化步骤
+        vec1 = normalize(vec1);
+        vec2 = normalize(vec2);
         Set<String> commonWords = new HashSet<>(vec1.keySet());
         commonWords.retainAll(vec2.keySet());
-
+        Map<String, Double> finalVec = vec1;
+        Map<String, Double> finalVec1 = vec2;
         double dotProduct = commonWords.stream()
-                .mapToDouble(word -> vec1.get(word) * vec2.get(word))
+                .mapToDouble(word -> finalVec.get(word) * finalVec1.get(word))
                 .sum();
 
         double norm1 = Math.sqrt(vec1.values().stream().mapToDouble(v -> v*v).sum());
@@ -32,13 +38,19 @@ public  class SimilarityCalculator {
 
     // 余弦相似度计算示例
     public double cosineDistance(Map<String, Double> v1, Map<String, Double> v2) {
+        // 改用稀疏向量优化算法（参考网页4）
         double dotProduct = 0.0, norm1 = 0.0, norm2 = 0.0;
         for (String key : v1.keySet()) {
-            dotProduct += v1.get(key) * v2.getOrDefault(key, 0.0);
+            double val2 = v2.getOrDefault(key, 0.0);
+            dotProduct += v1.get(key) * val2;
             norm1 += Math.pow(v1.get(key), 2);
+            norm2 += Math.pow(val2, 2); // 避免重复计算v2的norm
         }
+        // 补充v2特有维度计算
         for (String key : v2.keySet()) {
-            norm2 += Math.pow(v2.get(key), 2);
+            if (!v1.containsKey(key)) {
+                norm2 += Math.pow(v2.get(key), 2);
+            }
         }
         return 1 - (dotProduct / (Math.sqrt(norm1) * Math.sqrt(norm2)));
     }

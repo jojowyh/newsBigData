@@ -27,4 +27,26 @@ public class Vectorizer {
                 });
         return vector;
     }
+
+    //向量归一化？
+    public static Map<String, Double> normalize(Map<String, Double> vector) {
+        // 计算L2范数（欧几里得范数）
+        double norm = 0.0;
+        for (Double value : vector.values()) {
+            norm += value * value;
+        }
+        norm = Math.sqrt(norm);
+
+        // 处理零范数（避免除以零）
+        if (norm == 0) {
+            return new HashMap<>(vector); // 返回原始向量副本
+        }
+
+        // 构造归一化后的向量
+        Map<String, Double> normalized = new HashMap<>();
+        for (Map.Entry<String, Double> entry : vector.entrySet()) {
+            normalized.put(entry.getKey(), entry.getValue() / norm);
+        }
+        return normalized;
+    }
 }

@@ -10,6 +10,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
+import static com.ysu.wyh.SimilarityCalculator.cosineSimilarity;
+
 public class ClusterModel {
 
     //上下文
@@ -31,12 +33,23 @@ public class ClusterModel {
     private Integer BATCH_TO_CREATE = 50;
     private Map<Integer, Queue<Map<String,Double>>> containerToBatchCreate = new ConcurrentHashMap<>();
 
+    // 在ClusterModel类中定义缓存容器
+    private List<Map<String, Double>> vectorCache = new ArrayList<>();
+
     public ClusterModel(Context context) {
         this.context = context;
         this.similarityCalculator = new SimilarityCalculator();
     }
 
     public int predict(Map<String, Double> vector, Context context) {
+        // 将当前处理向量存入缓存
+        vectorCache.add(vector);
+
+        // 定期清理旧数据（滑动窗口机制）
+        if(vectorCache.size() > 500) { // 保留最近400个向量
+            vectorCache = vectorCache.subList(90, 490);
+        }
+
         // 没有质心的时候，先积累一些数据计算初始质心
         if (context.getCounter(num) == 0) {
             containerToBatchInit.add(vector);
@@ -60,8 +73,9 @@ public class ClusterModel {
             }
         }
 
-        // 动态创建新簇条件，相似度小于0.6就创建新簇
-        if (maxSim < 0.6) { // 相似度阈值可配置
+        // 动态创建新簇条件，相似度小于阈值就创建新簇
+        double threshold = calculateThreshold(vectorCache);
+        if (maxSim < threshold) { // 相似度阈值可配置
             containerToBatchCreate.computeIfAbsent(-1, k -> new LinkedList<>()).add(vector);
             if(containerToBatchCreate.get(-1).size() >= BATCH_TO_CREATE) {
                 Map<String,Double> newCentroid = calculateCentroid(containerToBatchCreate.get(-1));
@@ -179,5 +193,20 @@ public class ClusterModel {
 
         // 方案2：流形学习选择（参考网页6的特征抽取）
         // 使用Isomap/MDS降维后选择几何中心点[6](@ref)
+    }
+
+    // 基于数据分布的自适应阈值（参考网页7）
+    public double calculateThreshold(List<Map<String, Double>> vectors) {
+        List<Double> similarities = new ArrayList<>();
+        // 采样计算相似度分布
+        for (int i=0; i<100; i++) {
+            int a = ThreadLocalRandom.current().nextInt(vectors.size());
+            int b = ThreadLocalRandom.current().nextInt(vectors.size());
+            similarities.add(cosineSimilarity(vectors.get(a), vectors.get(b)));
+        }
+        // 取均值+3倍标准差作为阈值
+        double mean = similarities.stream().mapToDouble(d->d).average().orElse(0.8);
+        double std = Math.sqrt(similarities.stream().mapToDouble(d->Math.pow(d-mean,2)).average().orElse(0.01));
+        return mean + 3 * std;
     }
 }

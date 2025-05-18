@@ -33,10 +33,12 @@ public class ClusteringFunction implements Function<String,String> {
 
         // 步骤2：向量化（基于TF-IDF）
         Map<String, Double> vector = Vectorizer.tfidf(words);
-
+        vector = Vectorizer.normalize(vector);
 
         // 步骤3：动态聚类
         int clusterId = clusterModel.predict(vector,context);
+
+
 
         // 步骤4：分发到对应Topic
         String outputTopic = "persistent://news/clusters/cluster-" + clusterId;

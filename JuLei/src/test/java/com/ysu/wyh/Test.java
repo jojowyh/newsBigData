@@ -10,38 +10,55 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 
+import static com.ysu.wyh.SimilarityCalculator.cosineSimilarity;
+
 public class Test {
 
     @org.junit.jupiter.api.Test
     public void test() throws Exception {
 //
-        List<String> news = getNews(60);
+        List<String> news = getNews(1000);
         MockFunction mockFunction = new MockFunction();
         MockContext mockContext = new MockContext();
         mockContext.incrCounter("numOfZhiXin",0);
         ClusterModel clusterModel = new ClusterModel(mockContext);
         mockFunction.initialize(mockContext);
-        for(String s : news) {
-            // 1. 预处理
-            List<String> words1 = TextProcessor.preprocess(s);
+//        for(String s : news) {
+//            // 1. 预处理
+//            List<String> words1 = TextProcessor.preprocess(s);
+//
+//
+//            // 2. 向量化
+//            Map<String, Double> vec1 = Vectorizer.tfidf(words1);
+//            vec1 = Vectorizer.normalize(vec1);
+//
+//            // 3. 聚类
+//            int i = clusterModel.predict(vec1, mockContext);
+//            System.out.println("Cluster:" + i);
+//            clusterModel.updateCentroid(i,vec1,mockContext);
+//        }
+
+        String s = "1、我哈打卡机阿萨德建卡户大花洒漏打卡哈DSL ";
+        List<String> preprocess = TextProcessor.preprocess(s);
+        Map<String, Double> tfidf = Vectorizer.tfidf(preprocess);
+        tfidf = Vectorizer.normalize(tfidf);
+        int i = clusterModel.predict(tfidf, mockContext);
+        clusterModel.updateCentroid(i,tfidf,mockContext);
+
+        String s1 = "苹果手机价格";
+        String s2 = "华为手机价格";
+        List<String> preprocess1 = TextProcessor.preprocess(s1);
+        List<String> preprocess2 = TextProcessor.preprocess(s2);
+        Map<String, Double> tfidf1 = Vectorizer.tfidf(preprocess1);
+        Map<String, Double> tfidf2 = Vectorizer.tfidf(preprocess2);
+        double similarity = cosineSimilarity(tfidf1, tfidf2);
+
+// 预处理后向量：
+// s1: {"苹果":0.707, "手机":0.707, "价格":0.707}
+// s2: {"华为":0.707, "手机":0.707, "价格":0.707}
+// 实际输出：0.666（合理区间）
 
 
-            // 2. 向量化
-            Map<String, Double> vec1 = Vectorizer.tfidf(words1);
-
-
-            // 3. 聚类
-            int i = clusterModel.predict(vec1, mockContext);
-            System.out.println("Cluster:" + i);
-            clusterModel.updateCentroid(i,vec1,mockContext);
-        }
-
-
-
-
-        // 4. 相似度验证
-        //double similarity = SimilarityCalculator.cosineSimilarity(vec1, vec3);
-        //System.out.printf("文本相似度: %.2f%%\n", similarity * 100);
     }
 
 
