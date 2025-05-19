@@ -10,23 +10,19 @@ import java.util.stream.Collectors;
 import static com.ysu.wyh.Vectorizer.normalize;
 
 public  class SimilarityCalculator {
-    // 计算两个向量的余弦相似度[6,7](@ref)
+    // 计算两个向量的***余弦相似度***
     public static double cosineSimilarity(Map<String, Double> vec1, Map<String, Double> vec2) {
-        // 新增归一化步骤
-        vec1 = normalize(vec1);
-        vec2 = normalize(vec2);
-        Set<String> commonWords = new HashSet<>(vec1.keySet());
-        commonWords.retainAll(vec2.keySet());
-        Map<String, Double> finalVec = vec1;
-        Map<String, Double> finalVec1 = vec2;
-        double dotProduct = commonWords.stream()
-                .mapToDouble(word -> finalVec.get(word) * finalVec1.get(word))
-                .sum();
+        Map<String, Double> normVec1 = normalize(vec1); // 网页6强调必须
+        Map<String, Double> normVec2 = normalize(vec2);
 
-        double norm1 = Math.sqrt(vec1.values().stream().mapToDouble(v -> v*v).sum());
-        double norm2 = Math.sqrt(vec2.values().stream().mapToDouble(v -> v*v).sum());
-
-        return dotProduct / (norm1 * norm2 + 1e-6);  // 防止除以零
+        // 复用稀疏向量优化计算（网页4方法）
+        double dotProduct = 0.0;
+        for (String key : normVec1.keySet()) {
+            if (normVec2.containsKey(key)) {
+                dotProduct += normVec1.get(key) * normVec2.get(key);
+            }
+        }
+        return dotProduct; // 因已归一化，norm1*norm2=1
     }
 
     public double minDistance(Map<String, Double> vec, List<Map<String, Double>> centroids) {
@@ -36,23 +32,9 @@ public  class SimilarityCalculator {
                 .orElse(Double.MAX_VALUE); // 处理空质心列表
     }
 
-    // 余弦相似度计算示例
-    public double cosineDistance(Map<String, Double> v1, Map<String, Double> v2) {
-        // 改用稀疏向量优化算法（参考网页4）
-        double dotProduct = 0.0, norm1 = 0.0, norm2 = 0.0;
-        for (String key : v1.keySet()) {
-            double val2 = v2.getOrDefault(key, 0.0);
-            dotProduct += v1.get(key) * val2;
-            norm1 += Math.pow(v1.get(key), 2);
-            norm2 += Math.pow(val2, 2); // 避免重复计算v2的norm
-        }
-        // 补充v2特有维度计算
-        for (String key : v2.keySet()) {
-            if (!v1.containsKey(key)) {
-                norm2 += Math.pow(v2.get(key), 2);
-            }
-        }
-        return 1 - (dotProduct / (Math.sqrt(norm1) * Math.sqrt(norm2)));
+    // ***余弦距离***计算示例
+    public  static double  cosineDistance(Map<String, Double> v1, Map<String, Double> v2) {
+        return 1 - cosineSimilarity(v1, v2); // 严格数学关系
     }
 
     public int weightedRandomSelect(List<Double> distances) {

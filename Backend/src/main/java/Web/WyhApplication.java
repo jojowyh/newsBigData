@@ -1,4 +1,4 @@
-package com.ysu.wyh;
+package Web;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

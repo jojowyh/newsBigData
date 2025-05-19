@@ -1,0 +1,15 @@
+# åºç¨æå¡ WEB è®¿é®ç«¯å£
+server:
+  port:8080
+pulsar:
+  broker-url:
+  TopicNames:
+    InputTopics:
+      UserBehaviorTopic:
+        persistent://news/behavior/user-logs
+      RawNewsTopic:
+        persistent://news/ingestion/news-raw
+api:
+  token:
+
+

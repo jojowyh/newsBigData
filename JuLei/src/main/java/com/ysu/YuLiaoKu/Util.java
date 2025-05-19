@@ -24,6 +24,7 @@ public class Util {
     String rootPath;
     public Util(String rootPath) {
         this.rootPath = rootPath;
+        traverseWithJava8(rootPath);
     }
 
     @SneakyThrows

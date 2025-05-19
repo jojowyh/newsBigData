@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
-import static com.ysu.wyh.SimilarityCalculator.cosineSimilarity;
+
 
 public class ClusterModel {
 
@@ -66,7 +66,7 @@ public class ClusterModel {
 
         // 遍历所有质心
         for (int i=1; i<=context.getCounter(num); i++) {
-            double sim = similarityCalculator.cosineDistance(vector, deserialize(context.getState("centroid_" + i)));
+            double sim = SimilarityCalculator.cosineDistance(vector, deserialize(context.getState("centroid_" + i)));
             if (sim > maxSim) {
                 maxSim = sim;
                 targetCluster = i;
@@ -202,7 +202,7 @@ public class ClusterModel {
         for (int i=0; i<100; i++) {
             int a = ThreadLocalRandom.current().nextInt(vectors.size());
             int b = ThreadLocalRandom.current().nextInt(vectors.size());
-            similarities.add(cosineSimilarity(vectors.get(a), vectors.get(b)));
+            similarities.add(SimilarityCalculator.cosineSimilarity(vectors.get(a), vectors.get(b)));
         }
         // 取均值+3倍标准差作为阈值
         double mean = similarities.stream().mapToDouble(d->d).average().orElse(0.8);

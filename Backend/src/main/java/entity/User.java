@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.ysu.wyh.demos.web;
+package entity;
 
 /**
  * @author <a href="mailto:chenxilzx1@gmail.com">theonefx</a>
